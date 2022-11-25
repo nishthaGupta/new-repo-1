@@ -1,0 +1,49 @@
+# This is a basic workflow to help you get started with Actions
+
+name: API Test
+
+# Controls when the workflow will run
+on: [workflow_dispatch]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        token: ['${GH_TOKEN}']
+
+    env:
+      GITHUB_API_BASE_URL: https://api.github.com
+      curl_custom_flags: "--fail"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v1
+        with:
+          scope: ${{ github.repository_owner }}
+          registry-url: https://npm.pkg.github.com
+
+      - name: Delete Package Version [Organization]
+        id: e
+        continue-on-error: true
+        run: |
+          curl ${curl_custom_flags} \
+               -X DELETE \
+               -H "Accept: application/vnd.github.v3+json" \
+               -H "Authorization: token ${{ matrix.token }}" \
+                  ${GITHUB_API_BASE_URL}/users/13084151/packages/npm/new-npm-package-1
+      - name: Job Summary
+        run: |
+          echo "### Observations" >> $GITHUB_STEP_SUMMARY
+          echo "|Test| Result |" >> $GITHUB_STEP_SUMMARY 
+          echo "|----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "|List NPM Packages For an Organization| ${{ steps.a.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "|Get Org Package| ${{ steps.b.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "|List Package Versions For an Organizational Package| ${{ steps.c.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "|Get Package Version For an Organizational Package| ${{ steps.d.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "|Delete Package Version [Organization]| ${{ steps.e.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "|Restore Package Version [Organization]| ${{ steps.f.outcome }} |" >> $GITHUB_STEP_SUMMARY
